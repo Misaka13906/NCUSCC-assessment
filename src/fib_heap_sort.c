@@ -1,6 +1,7 @@
 #include<stdbool.h>
 #include<stdlib.h>
 #include<stdio.h>
+#include<unistd.h>
 #define max(a, b) (a > b ? (a) : (b))
 #define N 100005
 #define lgN 25
@@ -51,10 +52,10 @@ node* rankRoot[lgN];
 // rank <= lg n
 
 void merge(node *par, node *chi) {
-    puts("before merge");
+    puts(">>>>>>before merge");
+    printf("conflict: rank = %d,  merge [%ld](%d) to [%ld](%d)\n", 
+                    chi->rank, chi - pool, chi->value, par - pool, par->value);
     chi->parent = par;
-    par->degree ++;
-    par->rank = max(par->rank, par->degree);
     // delete "chi" from original linked list
     chi->left->right = chi->right;
     chi->right->left = chi->left;
@@ -63,17 +64,24 @@ void merge(node *par, node *chi) {
         par->child = chi;
         chi->right = chi;
     }
-    puts("before insert in merge");
+    puts(">>>before insert in merge");
     insert(par->child, chi);
+    // 更新 rankRoot
+    par->degree ++;
+    if(par->degree > par->rank) {
+        rankRoot[par->rank] = NULL;
+        par->rank = par->degree;
+        rankRoot[par->rank] = par;
+    }
 }
 
 void consolidate(node *now) {
-    puts("before consolidate");
+    //sleep(1);
+    puts(">>>>>>>>>>before consolidate");
     if(rankRoot[now->rank] == NULL) {
         rankRoot[now->rank] = now;
-        printf("new: rank = %d\n", now->rank);
+        printf("new: rank = %d, [%ld](%d)\n", now->rank, now - pool, now->value);
     } else {
-        printf("conflict: rank = %d,  merge %ld & %ld\n", now->rank, now-pool, rankRoot[now->rank]-pool);
         if(rankRoot[now->rank]->value < now->value) {
             merge(rankRoot[now->rank], now);
         } else {
@@ -81,7 +89,7 @@ void consolidate(node *now) {
             rankRoot[now->rank] = now;
         }
     }
-    puts("after consolidate");
+    puts("<<<<<<<<<<after consolidate");
 }
 
 bool deleteMin() {
@@ -90,19 +98,21 @@ bool deleteMin() {
     }
     node *oldMinRoot = heap.minRoot;
     // merge children into root list
-    puts("merge children into root list");
+    puts("-----merge children into root list");
     if(oldMinRoot->child != NULL) {
+        node *nowRight = oldMinRoot->child->right;
         insert(oldMinRoot, oldMinRoot->child);
-        for(node *now = oldMinRoot->child->right; now != oldMinRoot->child; now = now->right) {
+        for(node *now = nowRight; now != oldMinRoot->child; now = nowRight) {
+            nowRight = now->right;
             insert(oldMinRoot, now);
         }
     }
     // delete old min root
-    puts("delete old min root");
+    puts("-----delete old min root");
     oldMinRoot->left->right = oldMinRoot->right;
     oldMinRoot->right->left = oldMinRoot->left;
     // update min root
-    puts("update min root");
+    puts("-----update min root");
     heap.minRoot = oldMinRoot->right;
     for(node *now = oldMinRoot->right->right; now != oldMinRoot->right; now = now->right) {
         if(now->value < heap.minRoot->value) {
@@ -111,35 +121,48 @@ bool deleteMin() {
         }
     }
     // Consolidate trees so that no two roots have same rank
-    puts("Consolidate trees so that no two roots have same rank");
+    puts("-----Consolidate trees so that no two roots have same rank");
     for(int i=0; i<lgN; i++) {
         rankRoot[i] = NULL;
     }
-    node *now = heap.minRoot;
+    node *now = heap.minRoot, *nowRight = heap.minRoot->right;
     consolidate(now);
-    for(node *now = heap.minRoot->right; now != heap.minRoot; now = now->right) {
+    for(node *now = nowRight; now != heap.minRoot; now = nowRight) {
+        nowRight = now->right;
         consolidate(now);
     }
     return true;
 }
 
+int res[N];
+
 void fibHeapSort(int *a, int n) {
     for(int i=1; i<=n; i++) {
         insertValue(a[i]);
     }
-    puts("finished insert");
+    puts("-----finished insert");
     for(int i=1; i<=n; i++) {
-        printf("%d ", heap.minRoot->value);
+        printf("%d ", pool[i].value);
+    }
+    node *now = heap.minRoot;
+    printf("[%ld](%d)\n", now - pool, now->value);
+    for(node *now = heap.minRoot->right; now != heap.minRoot; now = now->right) {
+        printf("[%ld](%d)\n", now - pool, now->value);
+    }
+    puts("-----before delete");
+    puts("");
+    for(int i=1; i<=n; i++) {
+        res[i] = heap.minRoot->value;
         deleteMin();
     }
 }
 
 
 int main() {
-    int n = 9;
-    int a[10] = {0, 4, 2, 8, 5, 7, 1, 9, 3, 6};
+    int n = 10;
+    int a[20] = {0, 4, 2, 8, 5, 7, 1, 9, 3, 6, 1};
     //  a[10] = {0, 100, 5, 3, 11, 33, 6, 8, 7};
     fibHeapSort(a, n);
     for(int i=1; i<=n; i++)
-        printf("%d%c", a[i], " \n"[i==n]);
+        printf("%d%c", res[i], " \n"[i==n]);
 }
