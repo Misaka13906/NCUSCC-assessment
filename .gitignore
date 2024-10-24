@@ -1,0 +1,9 @@
+.vscode/
+ignore/
+bin/
+data/
+
+*.log
+*.out
+*.o
+*.sh
