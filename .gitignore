@@ -6,4 +6,3 @@ data/
 *.log
 *.out
 *.o
-*.sh
