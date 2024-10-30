@@ -154,7 +154,7 @@ bool deleteMin() {
     return true;
 }
 
-void fibHeapSort(int *a, int n) {
+void sort(int *a, int n) {
     cnt = 0;
     heap.minRoot = NULL;
     for(int i=1; i<=n; i++) {

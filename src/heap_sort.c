@@ -6,7 +6,7 @@ void Swap(int *a, int *b) {
     *b = tmp;
 }
 
-void heapSort(int *a, int n) {
+void sort(int *a, int n) {
     for(int i=2; i<=n; i++) {
         for(int j=i; j > 1 && a[j] > a[j/2]; j /= 2) {
             Swap(&a[j], &a[j/2]);
